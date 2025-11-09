@@ -1,11 +1,39 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 
-public class NewMonoBehaviourScript : MonoBehaviour
+public class PlayerCam : MonoBehaviour
 {
-    public float sensX, sensY;
-    public Transform oreint;
+    [Header("Sensitivity")]
+    public float sensX = 200f;
+    public float sensY = 200f;
 
-    public float xRotation, yRotation;
+    [Header("References")]
+    public Transform orientation;
+
+    private float xRotation;
+    private float yRotation;
+
+    private InputSystem_Actions inputActions;
+    private Vector2 lookInput;
+
+    void Awake()
+    {
+        inputActions = new InputSystem_Actions();
+    }
+
+    void OnEnable()
+    {
+        inputActions.Enable();
+        inputActions.Player.Look.performed += ctx => lookInput = ctx.ReadValue<Vector2>();
+        inputActions.Player.Look.canceled += _ => lookInput = Vector2.zero;
+    }
+
+    void OnDisable()
+    {
+        inputActions.Player.Look.performed -= ctx => lookInput = ctx.ReadValue<Vector2>();
+        inputActions.Player.Look.canceled -= _ => lookInput = Vector2.zero;
+        inputActions.Disable();
+    }
 
     void Start()
     {
@@ -13,14 +41,16 @@ public class NewMonoBehaviourScript : MonoBehaviour
         Cursor.visible = false;
     }
 
-    // Update is called once per frame
     void Update()
     {
-        float mouseX = Input.GetAxisRaw("Mouse X") * Time.deltaTime * sensX;
-        float mouseY = Input.GetAxisRaw("Mouse Y") * Time.deltaTime * sensY;
+        float mouseX = lookInput.x * Time.deltaTime * sensX;
+        float mouseY = lookInput.y * Time.deltaTime * sensY;
 
         yRotation += mouseX;
-
         xRotation -= mouseY;
+        xRotation = Mathf.Clamp(xRotation, -90f, 90f);
+
+        transform.rotation = Quaternion.Euler(xRotation, yRotation, 0);
+        orientation.rotation = Quaternion.Euler(0, yRotation, 0);
     }
 }
