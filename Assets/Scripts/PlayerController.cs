@@ -11,28 +11,29 @@ public class PlayerController : MonoBehaviour
     private CharacterController controller;
     private Vector2 moveInput;
     private Vector3 velocity;
-    private bool isJumping;
 
-    private PlayerInput playerInput;
+    private InputSystem_Actions inputActions;
 
     void Awake()
     {
         controller = GetComponent<CharacterController>();
-        playerInput = GetComponent<PlayerInput>();
+        inputActions = new InputSystem_Actions();
     }
 
     void OnEnable()
     {
-        playerInput.actions["Move"].performed += OnMove;
-        playerInput.actions["Move"].canceled += OnMove;
-        playerInput.actions["Jump"].performed += OnJump;
+        inputActions.Player.Enable();
+        inputActions.Player.Move.performed += OnMove;
+        inputActions.Player.Move.canceled += OnMove;
+        inputActions.Player.Jump.performed += OnJump;
     }
 
     void OnDisable()
     {
-        playerInput.actions["Move"].performed -= OnMove;
-        playerInput.actions["Move"].canceled -= OnMove;
-        playerInput.actions["Jump"].performed -= OnJump;
+        inputActions.Player.Move.performed -= OnMove;
+        inputActions.Player.Move.canceled -= OnMove;
+        inputActions.Player.Jump.performed -= OnJump;
+        inputActions.Player.Disable();
     }
 
     void OnMove(InputAction.CallbackContext context)
@@ -48,7 +49,7 @@ public class PlayerController : MonoBehaviour
 
     void Update()
     {
-        // Movement
+        // Move player
         Vector3 move = transform.right * moveInput.x + transform.forward * moveInput.y;
         controller.Move(move * moveSpeed * Time.deltaTime);
 
