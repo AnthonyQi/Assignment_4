@@ -5,13 +5,10 @@ using UnityEngine.InputSystem;
 public class PlayerController : MonoBehaviour
 {
     public float moveSpeed = 5f;
-    public float jumpHeight = 2f;
-    public float gravity = -9.81f;
+    public Transform orientation; // assign the orientation from PlayerCam
 
     private CharacterController controller;
     private Vector2 moveInput;
-    private Vector3 velocity;
-
     private InputSystem_Actions inputActions;
 
     void Awake()
@@ -23,40 +20,30 @@ public class PlayerController : MonoBehaviour
     void OnEnable()
     {
         inputActions.Player.Enable();
-        inputActions.Player.Move.performed += OnMove;
-        inputActions.Player.Move.canceled += OnMove;
-        inputActions.Player.Jump.performed += OnJump;
+        inputActions.Player.Move.performed += ctx => moveInput = ctx.ReadValue<Vector2>();
+        inputActions.Player.Move.canceled += ctx => moveInput = Vector2.zero;
     }
 
     void OnDisable()
     {
-        inputActions.Player.Move.performed -= OnMove;
-        inputActions.Player.Move.canceled -= OnMove;
-        inputActions.Player.Jump.performed -= OnJump;
+        inputActions.Player.Move.performed -= ctx => moveInput = ctx.ReadValue<Vector2>();
+        inputActions.Player.Move.canceled -= ctx => moveInput = Vector2.zero;
         inputActions.Player.Disable();
-    }
-
-    void OnMove(InputAction.CallbackContext context)
-    {
-        moveInput = context.ReadValue<Vector2>();
-    }
-
-    void OnJump(InputAction.CallbackContext context)
-    {
-        if (controller.isGrounded)
-            velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
     }
 
     void Update()
     {
-        // Move player
-        Vector3 move = transform.right * moveInput.x + transform.forward * moveInput.y;
-        controller.Move(move * moveSpeed * Time.deltaTime);
+        // Camera-relative movement
+        Vector3 forward = orientation.forward;
+        Vector3 right = orientation.right;
 
-        // Gravity
-        if (controller.isGrounded && velocity.y < 0)
-            velocity.y = -2f;
-        velocity.y += gravity * Time.deltaTime;
-        controller.Move(velocity * Time.deltaTime);
+        forward.y = 0f;
+        right.y = 0f;
+        forward.Normalize();
+        right.Normalize();
+
+        Vector3 move = forward * moveInput.y + right * moveInput.x;
+
+        controller.Move(move * moveSpeed * Time.deltaTime);
     }
 }
