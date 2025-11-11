@@ -9,15 +9,7 @@ public class PlayerController : MonoBehaviour
     
     [Header("Gravity")]
     public float gravity = -9.81f;
-    public float groundedGravity = -2f;
     public float terminalVelocity = -50f;
-    
-    [Header("Ground Detection")]
-    public float groundCheckDistance = 0.3f;
-    public LayerMask groundMask = -1; // Everything by default
-    
-    [Header("Smoothing")]
-    public float slopeForceDown = 8f; // Extra downward force on slopes
     
     [Header("References")]
     public Transform orientation;
@@ -26,7 +18,6 @@ public class PlayerController : MonoBehaviour
     private Vector2 moveInput;
     private InputSystem_Actions inputActions;
     private float verticalVelocity = 0f;
-    private bool isGrounded;
     
     void Awake()
     {
@@ -55,10 +46,7 @@ public class PlayerController : MonoBehaviour
     
     void HandleMovement()
     {
-        // Better ground check using raycast
-        isGrounded = IsGroundedCheck();
-        
-        // Horizontal movement (camera/orientation relative)
+        // Horizontal movement based on orientation (camera direction)
         Vector3 forward = orientation.forward;
         Vector3 right = orientation.right;
         forward.y = 0f;
@@ -66,43 +54,24 @@ public class PlayerController : MonoBehaviour
         forward.Normalize();
         right.Normalize();
         
-        Vector3 move = forward * moveInput.y + right * moveInput.x;
-        Vector3 horizontalVelocity = move * moveSpeed;
+        Vector3 moveDirection = forward * moveInput.y + right * moveInput.x;
+        Vector3 horizontalVelocity = moveDirection * moveSpeed;
         
-        // Snap to ground if close (eliminates jitter on uneven terrain)
-        if (isGrounded && Physics.Raycast(transform.position + Vector3.up * 0.1f, Vector3.down, 
-            out RaycastHit groundHit, groundCheckDistance + 0.6f, groundMask, QueryTriggerInteraction.Ignore))
+        // Apply gravity constantly
+        verticalVelocity += gravity * Time.deltaTime;
+        if (verticalVelocity < terminalVelocity)
+            verticalVelocity = terminalVelocity;
+        
+        // Reset vertical velocity when grounded to prevent buildup
+        if (controller.isGrounded && verticalVelocity < 0f)
         {
-            float distToGround = groundHit.distance - 0.1f; // Account for offset
-            
-            // Snap down if hovering above ground
-            if (distToGround > controller.skinWidth && distToGround < 0.5f)
-            {
-                controller.Move(Vector3.down * (distToGround - controller.skinWidth));
-            }
-            
-            verticalVelocity = groundedGravity;
-        }
-        else
-        {
-            // In air - apply gravity
-            verticalVelocity += gravity * Time.deltaTime;
-            if (verticalVelocity < terminalVelocity)
-                verticalVelocity = terminalVelocity;
+            verticalVelocity = -2f; // Small downward force to stay grounded
         }
         
+        // Combine horizontal and vertical movement
         Vector3 finalVelocity = horizontalVelocity + Vector3.up * verticalVelocity;
-        controller.Move(finalVelocity * Time.deltaTime);
-    }
-    
-    bool IsGroundedCheck()
-    {
-        // Cast from center bottom of controller
-        Vector3 origin = transform.position + Vector3.up * (controller.radius * 0.5f);
-        float checkDist = controller.radius + groundCheckDistance;
         
-        // Use SphereCast for more reliable ground detection
-        return Physics.SphereCast(origin, controller.radius * 0.9f, Vector3.down, 
-            out RaycastHit hit, checkDist, groundMask, QueryTriggerInteraction.Ignore);
+        // Move the character
+        controller.Move(finalVelocity * Time.deltaTime);
     }
 }
