@@ -1,6 +1,2 @@
 # Assignment_4
-A prototype for our IMDM101 final project requiring us to create and design multiple scenes.
-
-Task: Make a short story, create dynamic objects, and combine them into three scenes.
-
-The basic premise of this experience is emotion through lose and regret. We'll be trying our best to depict that experience.
+This prototype immerses players in a journey through loss and regret. Follow a spirit from a rainy forest path into a haunted hotel and finally an altered exterior world. Dynamic objects include rain, trees, fog, doors, and animated spirits, all interacting with the environment to convey emotion and narrative progression.
